@@ -78,8 +78,5 @@ def run_simulation(distribution, n, tau, mu_norm, sigma_norm, mu_lognorm, sigma_
     parametric_SL = np.mean(np.array(parametric_orders) >= Y_obs)
     
     R_star = profit(target_order_quantity, Y_obs, 1-tau, 1)
-    nonparametric_PLR = np.mean(np.abs(R_star - np.array(nonparametric_profits)) / R_star)
-    parametric_PLR = np.mean(np.abs(R_star - np.array(parametric_profits)) / R_star)
-    PLR_comparison_ratio = nonparametric_PLR / parametric_PLR
+    nonparametric_PLR = np.mean(np.abs(
     
-    return (nonparametric_RMSE, parametric_RMSE, RMSE_comparison_ratio, nonparametric_SL, parametric_SL, nonparametric_PLR, parametric_PLR, PLR_comparison_ratio)
