@@ -1,0 +1,65 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jun 19 23:00:14 2024
+@author: Arya0
+"""
+import numpy as np
+import scipy.stats as sts
+
+number_of_simulations = 500
+sample_size = 200
+quantiles = [0.01, 0.05, 0.1, 0.3, 0.5, 0.7, 0.9, 0.95, 0.99]
+mean_normal = 115
+std_dev_normal = 10
+
+def generate_random_samples(mean_value, std_dev, size):
+    return np.random.normal(loc=mean_value, scale=std_dev, size=size)
+
+def estimated_quantile_normal(quantiles, samples):
+    mean_estimate = np.mean(samples)
+    std_dev_estimate = np.std(samples)
+    return sts.norm.ppf(quantiles, loc=mean_estimate, scale=std_dev_estimate)
+
+def estimated_quantile_lognormal(quantiles, samples):
+    log_samples = np.log(samples)
+    mean_estimate = np.mean(log_samples)
+    std_dev_estimate = np.std(log_samples)
+    return sts.lognorm.ppf(quantiles, s=std_dev_estimate, scale=np.exp(mean_estimate))
+
+def estimated_quantile_poisson(quantiles, samples):
+    mean_estimate = np.mean(samples)
+    return sts.norm.ppf(quantiles, loc=mean_estimate, scale=np.sqrt(mean_estimate))
+
+def start():
+    # Lognormal distribution
+    lognormal_quantile_estimates = np.zeros((number_of_simulations, len(quantiles)))
+    lognormal_quantile_star = np.zeros(len(quantiles))
+    
+    for i in range(number_of_simulations):
+        normal_dist_samples = np.random.normal(loc=mean_normal, scale=std_dev_normal, size=sample_size)
+        lognormal_dist_samples = np.exp(normal_dist_samples)
+        lognormal_quantile_estimates[i, :] = estimated_quantile_lognormal(quantiles, lognormal_dist_samples)
+    
+    for i in range(len(quantiles)):
+        lognormal_quantile_star[i] = sts.lognorm.ppf(quantiles[i], s=std_dev_normal, scale=np.exp(mean_normal))
+    
+    print(f"Lognormal({mean_normal}) quantile estimates over {number_of_simulations} simulations:")
+    for i in range(len(quantiles)):
+        print(f"For quantile = {quantiles[i]}: Mean quantile estimate is {np.mean(lognormal_quantile_estimates[:, i]):.4f} and quantile star is {lognormal_quantile_star[i]:.2f}")
+    
+    # Poisson distribution
+    poisson_quantile_estimates = np.zeros((number_of_simulations, len(quantiles)))
+    poisson_quantile_star = np.zeros(len(quantiles))
+    
+    for i in range(number_of_simulations):
+        poisson_dist_samples = np.random.poisson(lam=mean_normal, size=sample_size)
+        poisson_quantile_estimates[i, :] = estimated_quantile_poisson(quantiles, poisson_dist_samples)
+    
+    for i in range(len(quantiles)):
+        poisson_quantile_star[i] = sts.poisson.ppf(quantiles[i], loc=mean_normal)
+    
+    print(f"\nPoisson({mean_normal}) quantile estimates over {number_of_simulations} simulations:")
+    for i in range(len(quantiles)):
+        print(f"For quantile = {quantiles[i]}: Mean quantile estimate is {np.mean(poisson_quantile_estimates[:, i]):.4f} and quantile star is {poisson_quantile_star[i]:.2f}")
+
+start()
