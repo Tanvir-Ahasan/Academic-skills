@@ -1,0 +1,69 @@
+import numpy as np
+import math
+import scipy.stats as sts
+from scipy.integrate import quad
+
+numberOfSimulations = 500
+
+def rnd(mu, std, n):
+    return np.random.normal(loc=mu, scale=std, size=n)
+
+def generateNRandomNormal(mu, std, repeats, n):
+    results = []
+    for i in range(repeats):
+        results.append(rnd(mu, std, n))
+    return results
+
+def empiricalServiceLevel(estimatorQ, real):
+    final = 0
+    for i in range(numberOfSimulations):
+        if real[i].mean() <= estimatorQ[i]:
+            final += 1
+    return final / numberOfSimulations
+
+def rMSE(estimator, real):
+    return np.sqrt(np.square(estimator - real).mean())
+
+def storeParametricEstimator(tau, vY):
+    muParametric = []
+    stdParametric = []
+    for i in range(len(vY)):
+        muParametric.append(np.mean(vY[i]))
+        stdParametric.append(np.std(vY[i]))
+    return muParametric, stdParametric
+
+def parametricEstimatorQhat(tau, muParametric, stdParametric):
+    parametricEstimatorQhat = []
+    for i in range(len(muParametric)):
+        mu = muParametric[i]
+        std = stdParametric[i]
+        parametricEstimatorQhat.append(sts.norm.ppf(tau, loc=mu, scale=std))
+    return parametricEstimatorQhat
+
+def nonParametricQ(tau, vY, n):
+    ordered = []
+    for i in range(len(vY)):
+        ordered.append(sorted(vY[i]))
+    result = []
+    for j in range(len(vY)):
+        result.append(ordered[j][math.floor(tau * n)])
+    return result
+
+def actualQ(tau, mu, std):
+    return sts.norm.ppf(tau, loc=mu, scale=std)
+
+def expectedProfitFunction(Q, p, c, sigma, mu):
+    return (p - c) * Q - p * quad(lambda y: sts.norm.cdf(y, loc=mu, scale=sigma), -np.inf, Q)[0]
+
+def empiricalProfitLossRatio(maxExpectedProfit, resultingProfitQ, c, mu, sigma, p):
+    realR = expectedProfitFunction(maxExpectedProfit, p, c, sigma, mu)
+    rWithQhat = []
+    for i in range(numberOfSimulations):
+        rWithQhat.append(expectedProfitFunction(resultingProfitQ[i], p, c, sigma, mu))
+    empiricalPL = abs((realR - rWithQhat) / realR).mean()
+    return empiricalPL
+
+def start():
+    mu, sigma = 115, 10  # Parameters for the normal distribution
+    n_samples = [10, 50, 100, 200]  # Different sample sizes to test
+    
